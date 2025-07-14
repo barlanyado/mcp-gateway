@@ -75,12 +75,16 @@ class NPMCollector:
         self._download_stats = self._fetch_json(downloads_url)
 
         if self._raw_data and "error" in self._raw_data:
-            logger.error(f"Error from NPM registry for {self.package_name}: {self._raw_data['error']}")
+            logger.error(
+                f"Error from NPM registry for {self.package_name}: {self._raw_data['error']}"
+            )
             self._raw_data = None
             return False
 
         if self._download_stats and "error" in self._download_stats:
-            logger.warning(f"Error from NPM downloads API for {self.package_name}: {self._download_stats['error']}")
+            logger.warning(
+                f"Error from NPM downloads API for {self.package_name}: {self._download_stats['error']}"
+            )
 
         return bool(self._raw_data)
 
@@ -117,7 +121,10 @@ class NPMCollector:
             url = repo_info["url"]
             if isinstance(url, str):
                 # Standardize git URLs (git+https://, git://, etc.) to https://
-                match = re.search(r"(?:git\+ssh:\/\/git@|git\+https:\/\/|git:\/\/|github:)([\w.-]+)\/([\w.-]+?)(?:\.git)?$", url)
+                match = re.search(
+                    r"(?:git\+ssh:\/\/git@|git\+https:\/\/|git:\/\/|github:)([\w.-]+)\/([\w.-]+?)(?:\.git)?$",
+                    url,
+                )
                 if match:
                     user, repo = match.groups()
                     return f"https://github.com/{user}/{repo}"
@@ -131,13 +138,15 @@ class NPMCollector:
         issues_url = self.bug_tracker_url
         if issues_url and "github.com" in issues_url:
             return issues_url.removesuffix("/issues")
-                # Fallback for other URL structures that might be GitHub, simple check
+            # Fallback for other URL structures that might be GitHub, simple check
         return None
 
     @property
     def downloads_last_month(self) -> Optional[int]:
         """int: The number of downloads in the last month. Returns None if not available."""
-        if self._download_stats and isinstance(self._download_stats.get("downloads"), int):
+        if self._download_stats and isinstance(
+            self._download_stats.get("downloads"), int
+        ):
             return self._download_stats["downloads"]
         return None
 
@@ -150,8 +159,8 @@ class NPMCollector:
         return None
 
     @property
-    def days_since_last_updated(self) -> Optional[datetime]:
-        """datetime: The timestamp of the last package update. Returns None if not available."""
+    def days_since_last_updated(self) -> Optional[int]:
+        """int: The number of days since the last package update. Returns None if not available."""
         time_data = self._get_from_raw(["time", "modified"])
         if isinstance(time_data, str):
             try:
@@ -163,8 +172,8 @@ class NPMCollector:
         return None
 
     @property
-    def days_since_created(self) -> Optional[datetime]:
-        """datetime: The timestamp of the package creation. Returns None if not available."""
+    def days_since_created(self) -> Optional[int]:
+        """int: The number of days since the package creation. Returns None if not available."""
         time_data = self._get_from_raw(["time", "created"])
         if isinstance(time_data, str):
             try:
@@ -175,7 +184,7 @@ class NPMCollector:
         return None
 
     @property
-    def license_info(self) -> Optional[Any]: # Can be string or dict
+    def license_info(self) -> Optional[Any]:  # Can be string or dict
         """str | Dict: License information for the package (e.g., 'MIT' or a SPDX license object).
         Returns None if not available.
         """
@@ -188,13 +197,17 @@ class NPMCollector:
         if isinstance(maintainers, list):
             return len(maintainers)
         return None
-        
+
     @property
     def maintainers_names(self) -> Optional[List[str]]:
         """List[str]: A list of package maintainer names. Returns None if not available."""
         maintainers_data = self._get_from_raw(["maintainers"])
         if isinstance(maintainers_data, list):
-            names = [m.get("name") for m in maintainers_data if isinstance(m, dict) and m.get("name")]
+            names = [
+                m.get("name")
+                for m in maintainers_data
+                if isinstance(m, dict) and m.get("name")
+            ]
             return names if names else None
         return None
 
@@ -225,7 +238,6 @@ class NPMCollector:
             logger.warning("Data has not been fetched yet. Call fetch_data() first.")
             return {"error": "Data not fetched. Call fetch_data() first."}
 
-        
         return {
             Keys.PACKAGE_NAME: self.package_name,
             Keys.DESCRIPTION: self.description,
@@ -245,10 +257,13 @@ class NPMCollector:
 
 def main_example(package_name: str) -> None:
     """Example usage of the NPMCollector."""
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
-    
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    )
+
     collector = NPMCollector(package_name)
-    
+
     success = collector.fetch_data()
 
     if success:
@@ -259,9 +274,10 @@ def main_example(package_name: str) -> None:
     else:
         logger.error(f"Failed to fetch data for {package_name}.")
 
+
 if __name__ == "__main__":
     main_example("@waldzellai/clear-thought")
     # main_example("nonexistentpackage123abc")
     # main_example("express")
-        # main_example("@angular/core")
-        # main_example("lodash")
+    # main_example("@angular/core")
+    # main_example("lodash")
