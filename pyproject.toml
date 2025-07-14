@@ -53,3 +53,9 @@ exclude = ["data*", "front*", "tests*"]
 
 [tool.setuptools.package-data]
 "*" = ["docs/*.png"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "xetrack>=0.3.4",
+]
