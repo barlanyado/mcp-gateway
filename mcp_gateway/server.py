@@ -42,6 +42,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class Server:
     """Manages the connection and interaction with a single proxied MCP server."""
 
@@ -66,15 +67,14 @@ class Server:
         self._prompts: List[types.Prompt] = []
         logger.info(f"Initialized Proxied Server: {self.name}")
 
-    
     @property
     def blocked(self) -> Literal["blocked", "skipped", "passed", None]:
         return self.config.get("blocked")
-    
+
     @blocked.setter
     def blocked(self, value: Literal["blocked", "skipped", "passed", None]):
         self.config["blocked"] = value
-    
+
     @property
     def session(self) -> ClientSession:
         """Returns the active ClientSession, raising an error if not started."""
@@ -382,3 +382,16 @@ class GetewayContext:
     proxied_servers: Dict[str, Server] = field(default_factory=dict)
     plugin_manager: Optional[PluginManager] = None
     mcp_json_path: Optional[str] = None
+
+
+def main():
+    """Entry point for backward compatibility - delegates to gateway.main()"""
+    # Import here to avoid circular imports
+    from mcp_gateway.gateway import main as gateway_main
+
+    logger.info("Starting MCP Gateway server via legacy server.py entry point...")
+    gateway_main()
+
+
+if __name__ == "__main__":
+    main()

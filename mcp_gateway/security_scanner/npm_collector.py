@@ -28,9 +28,70 @@ class NPMCollector:
         Args:
             package_name: The name of the npm package to collect data for.
         """
-        self.package_name: str = package_name.lower()
+        self.original_package_name: str = package_name
+        self.package_name: str = self._parse_package_name(package_name)
+        self.version_tag: Optional[str] = self._extract_version_tag(package_name)
         self._raw_data: Optional[Dict[str, Any]] = None
         self._download_stats: Optional[Dict[str, Any]] = None
+
+    def _parse_package_name(self, package_name: str) -> str:
+        """
+        Parses the package name to remove version tags.
+
+        Examples:
+            - "@upstash/context7-mcp@latest" -> "@upstash/context7-mcp"
+            - "express@4.18.2" -> "express"
+            - "@angular/core@16.0.0" -> "@angular/core"
+
+        Args:
+            package_name: The raw package name potentially with version tag
+
+        Returns:
+            The clean package name without version tag
+        """
+        package_name = package_name.strip()
+
+        # Handle scoped packages (e.g., @scope/package@version)
+        if package_name.startswith("@"):
+            # Find the last @ symbol, which should be the version separator
+            # We need to be careful because scoped packages already have one @
+            parts = package_name.split("@")
+            if len(parts) > 2:  # @scope/package@version has 3 parts when split by @
+                # Reconstruct without the version: @scope/package
+                return "@" + "@".join(parts[1:-1])
+            else:
+                # No version tag, return as-is
+                return package_name.lower()
+        else:
+            # Handle regular packages (e.g., package@version)
+            if "@" in package_name:
+                return package_name.split("@")[0].lower()
+            else:
+                return package_name.lower()
+
+    def _extract_version_tag(self, package_name: str) -> Optional[str]:
+        """
+        Extracts the version tag from a package name.
+
+        Args:
+            package_name: The raw package name potentially with version tag
+
+        Returns:
+            The version tag if present, None otherwise
+        """
+        package_name = package_name.strip()
+
+        # Handle scoped packages
+        if package_name.startswith("@"):
+            parts = package_name.split("@")
+            if len(parts) > 2:  # @scope/package@version
+                return parts[-1]  # Return the last part as version
+        else:
+            # Handle regular packages
+            if "@" in package_name:
+                return package_name.split("@")[-1]
+
+        return None
 
     def _fetch_json(self, url: str) -> Optional[Dict[str, Any]]:
         """
@@ -240,6 +301,8 @@ class NPMCollector:
 
         return {
             Keys.PACKAGE_NAME: self.package_name,
+            Keys.ORIGINAL_PACKAGE_NAME: self.original_package_name,
+            Keys.VERSION_TAG: self.version_tag,
             Keys.DESCRIPTION: self.description,
             Keys.GITHUB_LINK: self.github_url,
             Keys.DOWNLOADS_LAST_MONTH: self.downloads_last_month,
